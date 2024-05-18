@@ -4,6 +4,7 @@ const ejs = require('ejs');
 const app = express();
 const bodyParser = require('body-parser');
 const path = require("path");
+const session = require('express-session');
 const portNumber = 5003;
 
 require("dotenv").config({ path: path.resolve(__dirname, 'credentials/.env') })  
@@ -17,7 +18,6 @@ const databaseAndCollection1000 = {db: "aniClaim", collection:"top1000Characters
 
 const { MongoClient, ServerApiVersion } = require('mongodb');
 let client;
-let curr = null;
 let top1000;
 
 async function main() {
@@ -37,21 +37,32 @@ app.use(bodyParser.urlencoded({extended:false}));
 app.set("views", path.resolve(__dirname, "templates"));
 app.set("view engine", "ejs");
 app.use(express.static(__dirname + '/public'));
+app.use(session({
+    secret: 'cmsc335',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false }
+}));
 
 app.get("/", async (request, response) => {
-    if (curr) {
-        return response.render("loggedin", { name: curr.username});
+    if (request.session.user) {
+        return response.render("loggedin", { name: request.session.user.username});
     }
 	response.render("index");
 });
 
-app.post('/', async (req, res) => {
+app.post('/', async (request, response) => {
     try {
-        curr = null;
-        res.redirect('/');
+        request.session.destroy(err => {
+            if (err) {
+                console.error('Logout error:', err);
+                return response.status(500).send('Internal server error');
+            }
+            response.redirect('/');
+        });
     } catch (error) {
         console.error('Logout error:', error);
-        res.status(500).send('Internal server error');
+        response.status(500).send('Internal server error');
     }
 });
 
@@ -82,122 +93,122 @@ app.get("/register", (request, response) => {
 	response.render("register");
 });
 
-app.post('/loggedin', async (req,res) =>{
+app.post('/loggedin', async (request,response) =>{
     try {
         await client.connect();
-        const {username, password} = req.body;
+        const {username, password} = request.body;
         const user = await client.db(databaseAndCollection.db).collection(databaseAndCollection.collection).findOne({username});
         if (!user || password != user.password) {
             // Render login page with error message
-            return res.render('login', { errorMessage: 'Incorrect username or password' });
+            return response.render('login', { errorMessage: 'Incorrect username or password' });
         }
-        curr = user;
-        res.render("loggedin", { name: curr.username});
+        request.session.user = user;
+        response.render("loggedin", { name: request.session.user.username});
     } catch (e) {
         console.error(e);
         // Render login page with error message
-        res.render('login', { errorMessage: 'An error occurred. Please try again later.' });
+        response.render('login', { errorMessage: 'An error ocrequest.session.usered. Please try again later.' });
     } finally {
         await client.close();
     }
 });
 
-app.get('/account', async (req,res) =>{
-    const keys = Object.keys(curr.characters);
+app.get('/account', async (request,response) =>{
+    const keys = Object.keys(request.session.user.characters);
     keys.sort((id1, id2) => {
-        return curr.characters[id2].price - curr.characters[id1].price;
+        return request.session.user.characters[id2].price - request.session.user.characters[id1].price;
     });
     let characters = '';
     keys.forEach(id => {
         characters += `<a href="/character/:${id}" style="color: black; text-decoration: none;">`;
-        characters += `<div class="card"><strong> ${curr.characters[id].name} </strong><br>`;
-        characters += `<img src="${curr.characters[id].img}" alt="N/A">`;
-        characters += `<br><strong>${curr.characters[id].rank} (x${curr.characters[id].count})</strong></div></a>`;
+        characters += `<div class="card"><strong> ${request.session.user.characters[id].name} </strong><br>`;
+        characters += `<img src="${request.session.user.characters[id].img}" alt="N/A">`;
+        characters += `<br><strong>${request.session.user.characters[id].rank} (x${request.session.user.characters[id].count})</strong></div></a>`;
     });
-    res.render('account', { user: curr, characters: characters });
+    response.render('account', { user: request.session.user, characters: characters });
 });
 
-app.post('/sell', async (req,res) =>{
-    if (!curr) {
-        return res.status(404).send('User not found');
+app.post('/sell', async (request,response) =>{
+    if (!request.session.user) {
+        return response.status(404).send('User not found');
     }
     try {
-        const id = req.body.id;
+        const id = request.body.id;
 
-        if (!curr.characters.hasOwnProperty(id)) {
+        if (!request.session.user.characters.hasOwnProperty(id)) {
             console.log(id);
-            return res.status(404).send('Character not owned');
+            return response.status(404).send('Character not owned');
         }
 
-        curr.wallet += curr.characters[id].price;
+        request.session.user.wallet += request.session.user.characters[id].price;
 
-        if (curr.characters[id].count > 1) {
-            console.log(`Sold 1 of ${curr.characters[id].name} from collection`);
-            curr.characters[id].count -= 1;
+        if (request.session.user.characters[id].count > 1) {
+            console.log(`Sold 1 of ${request.session.user.characters[id].name} from collection`);
+            request.session.user.characters[id].count -= 1;
         } else {
-            console.log(`${curr.characters[id].name} deleted from collection`);
-            delete curr.characters[id];
+            console.log(`${request.session.user.characters[id].name} deleted from collection`);
+            delete request.session.user.characters[id];
         }
 
-        const query = {username: curr.username};
-        const update = {characters: curr.characters, wallet: curr.wallet};
+        const query = {username: request.session.user.username};
+        const update = {characters: request.session.user.characters, wallet: request.session.user.wallet};
         await updateUser(query, update);
 
-        const keys = Object.keys(curr.characters);
+        const keys = Object.keys(request.session.user.characters);
         keys.sort((id1, id2) => {
-            return curr.characters[id2].price - curr.characters[id1].price;
+            return request.session.user.characters[id2].price - request.session.user.characters[id1].price;
         });
 
         let characters = '';
         keys.forEach(id => {
             characters += `<a href="/character/:${id}" style="color: black; text-decoration: none;">`;
-            characters += `<div class="card"><strong> ${curr.characters[id].name} </strong><br>`;
-            characters += `<img src="${curr.characters[id].img}" alt="N/A">`;
-            characters += `<br><strong>${curr.characters[id].rank} (x${curr.characters[id].count})</strong></div></a>`;
+            characters += `<div class="card"><strong> ${request.session.user.characters[id].name} </strong><br>`;
+            characters += `<img src="${request.session.user.characters[id].img}" alt="N/A">`;
+            characters += `<br><strong>${request.session.user.characters[id].rank} (x${request.session.user.characters[id].count})</strong></div></a>`;
         });
-        res.render('account', { user: curr, characters: characters });
+        response.render('account', { user: request.session.user, characters: characters });
 
     } catch (e) {
         console.error('There was a problem with the fetch operation:', e);
-        return res.status(404).send('There was a problem with the fetch operation:');
+        return response.status(404).send('There was a problem with the fetch operation:');
     }
 });
 
-app.get("/character/:id", async (req, res) => {
-    const id = req.params.id.substring(1);
+app.get("/character/:id", async (request, response) => {
+    const id = request.params.id.substring(1);
 
     try {
         const characterData = await fetchCharacterData(id);
 
         if (!characterData) {
-            return res.status(404).send('Character not found');
+            return response.status(404).send('Character not found');
         }
 
         let owned = false;
         let price = 0;
 
-        if (curr.characters.hasOwnProperty(id)) {
+        if (request.session.user.characters.hasOwnProperty(id)) {
             owned = true;
-            price = curr.characters[id].price;
+            price = request.session.user.characters[id].price;
         }
 
-        res.render('character', { character: characterData, owned: owned, price: price, id: id });
+        response.render('character', { character: characterData, owned: owned, price: price, id: id });
     } catch (error) {
         console.error('Error fetching character data:', error);
-        res.status(500).send('Internal server error');
+        response.status(500).send('Internal server error');
     }
 });
 
-app.get("/roll", (req, res) => {
-    if (!curr) {
-        return res.status(404).send('User not found');
+app.get("/roll", (request, response) => {
+    if (!request.session.user) {
+        return response.status(404).send('User not found');
     }
-    res.render("roll");
+    response.render("roll");
 });
 
-app.post("/roll", async (req, res) => {
-    if (!curr) {
-        return res.status(404).send('User not found');
+app.post("/roll", async (request, response) => {
+    if (!request.session.user) {
+        return response.status(404).send('User not found');
     }
     try {
         await client.connect();
@@ -205,26 +216,26 @@ app.post("/roll", async (req, res) => {
         const keys = Object.keys(top1000.characters);
         let id = keys[idIndex];
 
-        if (curr.characters[id]) {
-            curr.characters[id].count += 1;
+        if (request.session.user.characters[id]) {
+            request.session.user.characters[id].count += 1;
         } else {
             data = await fetchCharacterData(id);
             if (!data) {
-                res.render('404');
+                response.render('404');
                 return;
             }
-            curr.characters[id] = data;
+            request.session.user.characters[id] = data;
         }
-        const query = {username: curr.username};
-        const update = {characters: curr.characters};
+        const query = {username: request.session.user.username};
+        const update = {characters: request.session.user.characters};
         await updateUser(query, update);
 
-        if (curr.characters[id].rank)
+        if (request.session.user.characters[id].rank)
 
-        res.render('results', { character: curr.characters[id] });
+        response.render('results', { character: request.session.user.characters[id] });
     } catch (e) {
         console.error('There was a problem with the fetch operation:', e);
-        res.render('404');
+        response.render('404');
     }
 });
 
@@ -287,8 +298,8 @@ async function updateUser(query, update) {
 }
 
 async function fetchCharacterData(id) {
-    if (curr.characters.hasOwnProperty(id)) {
-        return curr.characters[id];
+    if (request.session.user.characters.hasOwnProperty(id)) {
+        return request.session.user.characters[id];
     }
 
     try {
