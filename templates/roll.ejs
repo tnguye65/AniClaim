@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<title> AniClaim </title>
+    <link href="/css/styles.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+	<a href="/"><h1> AniClaim </h1></a>
+
+    <div class="container">
+        <h2> Click the loot box to roll! </h2>
+        <form action="/roll" id="roll" method="post">
+            <div id="lootBox" class="loot-box" onclick="openLootBox()"> </div>
+        </form>
+    </div>
+
+    <script>
+        const rollForm = document.getElementById('roll');
+
+        function openLootBox() {
+            const lootBox = document.getElementById('lootBox');
+            
+            // Add the 'shake' class to initiate the shaking animation
+            lootBox.classList.add('shake');
+            
+            // Simulate opening duration
+            setTimeout(() => {
+                // Remove the 'shake' class after the animation ends
+                lootBox.classList.remove('shake');
+                
+                // Add your logic here to reveal loot content or perform other actions
+                console.log('Loot box opened!');
+            }, 2000); // Change this duration as needed
+            rollForm.submit();
+        }
+
+    </script>
+
+
+</body>
+
+</html>

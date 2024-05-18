@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<title> Error </title>
+    <link href="/css/styles.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+	<h1> Error: Wait a few seconds then try again! </h1>
+
+    <form action="/roll" id="roll" method="post">
+        <button id="roll-button" type="submit"> Roll Again </button>
+    </form>
+
+    <script>
+        const rollForm = document.getElementById('roll');
+        const rollButton = document.getElementById('roll-button');
+        let buttonDisabled = false;
+
+        function disableButton() {
+            rollButton.disabled = true;
+            buttonDisabled = true;
+            setTimeout(enableButton, 3000);
+        }
+
+        function enableButton() {
+            rollButton.disabled = false;
+            buttonDisabled = false;
+        }
+
+        rollForm.addEventListener('submit', function(event) {
+            if (buttonDisabled) {
+                event.preventDefault();
+                console.log('Please wait for 3 seconds before rolling again.');
+            } else {
+                disableButton();
+                console.log('Rolling...');
+            }
+        });
+    </script>
+
+    <hr>
+
+</body>
+
+</html>

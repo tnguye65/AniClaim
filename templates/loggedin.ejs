@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<title> AniClaim </title>
+    <link href="/css/styles.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+	<a href="/" class="clickable"><h1 class="clickable"> AniClaim </h1></a>
+
+    <% if (name) { %>
+        <h2> Welcome, <%= name %> </h2>
+    <% } %>
+    <div class="ind">
+
+    <a href="/roll"><button>Roll</button></a><br>
+    <a href="/account"><button>Account</button></a><br>
+    <a href="/allcharacters"><button> All Characters </button></a><br>
+    <a href="/leaderboard"><button> Leaderboard </button></a><br>
+    <form action="/" id="logout" method="post">
+        <button type="submit"> Log Out </button>
+    </form>
+</div>
+    <hr>
+    <div class="about"><a href="/about">About Us</a></div>
+</body>
+
+</html>

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<title> AniClaim </title>
+    <link href="/css/styles.css" rel="stylesheet" type="text/css">
+
+	<style>
+        .card-collection {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .card {
+            margin: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: center;
+			transition: transform 0.2s; 
+        }
+		.card:hover {
+            transform: scale(1.05); 
+        }
+        .card img {
+            width: 100px; 
+            height: auto;
+        }
+    </style>
+</head>
+
+<body>
+	<a href="/"><h1> AniClaim </h1></a>
+
+    <h2> Characters: </h2>
+
+	<div class="card-collection">
+		<%- characters %> <br>
+	</div>
+
+    <hr>
+
+</body>
+
+</html>

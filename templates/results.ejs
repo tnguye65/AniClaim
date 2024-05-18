@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<title> AniClaim </title>
+    <link href="/css/styles.css" rel="stylesheet" type="text/css">
+
+</head>
+
+<body>
+	<a href="/"><h1> AniClaim </h1></a>
+    
+    <div class="roll-container">
+        <div>
+            <div>
+                <h2>Character:</h2>
+                <%- character.name %>
+            </div>
+            <div>
+                <h2>Rank:</h2>
+                <%- character.rank %> ($<%- character.price %>)
+            </div>
+            <div>
+                <h2>Main Anime:</h2>
+                <%- character.anime %>
+            </div>
+        </div>
+        <div class="roll-image">
+            <img src="<%- character.img %>" alt="character image">
+        </div>
+    </div>
+    
+    <h2> Description: </h2> 
+    <%- character.summary %> <br> <br>
+
+    <a href="/roll"><button type="submit"> Roll Again </button></a>
+
+    <hr>
+
+</body>
+
+</html>

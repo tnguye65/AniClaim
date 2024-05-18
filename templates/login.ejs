@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<title> AniClaim </title>
+    <link href="/css/styles.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+	<a href="/"><h1> AniClaim </h1></a>
+
+    <h2>Log in</h2>
+
+    <% if(errorMessage) { %>
+        <%= errorMessage %>
+        <br><br>
+    <% } %>
+
+    <form action="/loggedin" id="login" method="post">
+        Username: <br> <input type="text" id="username" name="username" required> <br>
+        Password: <br> <input type="password" id="password" name="password" required> <br>
+        <button type="submit"> Login </button>
+    </form>
+
+    <hr>
+
+</body>
+
+</html>
+

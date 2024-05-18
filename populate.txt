@@ -1,0 +1,63 @@
+const databaseAndCollection1000 = {db: "aniClaim", collection:"top1000Characters"};
+let characterIDs = [];
+
+app.get("/", async (request, response) => {
+    if (curr) {
+        return response.render("loggedin", { name: curr.username});
+    }
+    await populateIDs();
+    const name = "top1000";
+    const top1000 = await client.db(databaseAndCollection1000.db).collection(databaseAndCollection1000.collection).findOne({name});
+    console.log(top1000.IDs);
+	response.render("index");
+});
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function populateIDs() {
+    try {
+        await client.connect();
+        let topCharactersData = {};
+        let page = 1;
+        while (page <= 40) {
+            await delay(1000);
+            let query = {page: page, order_by: "favorites", sort: "desc"};
+            let queryString = new URLSearchParams(query).toString();
+            let apiUrl = `https://api.jikan.moe/v4/characters?${queryString}`;
+
+            let characters25 = await fetch(apiUrl);
+
+            if (!characters25.ok) {
+                console.log("hello");
+                console.error('Error fetching character data');
+                return null;
+            }
+
+            const characters = await characters25.json();
+
+            let charactersData = characters.data;
+
+            charactersData.forEach(character => {
+                let imgURL = character.images.jpg.image_url || "/assets/question.png";
+                let rank = getRank(character.favorites);
+                topCharactersData[character.mal_id] = {
+                    name: character.name,
+                    img: imgURL,
+                    rank: rank
+                }
+            });
+
+            page += 1;
+        }
+        const top1000 = {
+            name: "top",
+            characters: topCharactersData
+        };
+        await client.db(databaseAndCollection1000.db).collection(databaseAndCollection1000.collection).insertOne(top1000);
+
+    } catch (e) {
+        console.error('There was a problem with the fetch operation:', e);
+    }
+}
